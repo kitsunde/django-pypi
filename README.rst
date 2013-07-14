@@ -19,8 +19,6 @@ To get the latest commit from GitHub
 
     $ pip install -e git+git://github.com/Celc/django-pypi.git#egg=pypi
 
-TODO: Describe further installation steps (edit / remove the examples below):
-
 Add ``pypi`` to your ``INSTALLED_APPS``
 
 .. code-block:: python
