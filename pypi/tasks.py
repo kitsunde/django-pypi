@@ -1,37 +1,54 @@
+from datetime import datetime
 import xmlrpclib
 from celery.task import task
-from django.db import IntegrityError
-from pypi.models import Package, Version, Release
+from django.utils import timezone
+import pytz
+import requests
+from pypi.models import Package
+
+
+def deserialize_pypi(obj):
+    iso_time_fields = frozenset(('upload_time',))
+
+    for time_field in iso_time_fields.intersection(obj.keys()):
+        date_time = datetime.strptime(
+            obj[time_field],
+            "%Y-%m-%dT%H:%M:%S"
+        )
+        obj[time_field] = timezone.make_aware(date_time, pytz.UTC)
+
+    return obj
 
 
 @task()
-def update_releases(pk):
-    client = xmlrpclib.ServerProxy('http://pypi.python.org/pypi',
-                                   use_datetime=True)
-    version = Version.objects.get(pk=pk)
-    for release in client.release_urls(version.package.name, version.version):
-        try:
-            Release.objects.create(**dict(release, version=version))
-        except IntegrityError:
-            pass
+def update_version_details(package, version):
+    if Package.objects.filter(name=package, version=version).exists():
+        return
+
+    response = requests.get('https://pypi.python.org/pypi/%s/%s/json' % (
+        package, version
+    ))
+
+    package_data = response.json(object_hook=deserialize_pypi)
+
+    Package.objects.create(
+        name=package,
+        version=version,
+        released_at=package_data['urls'][-1]['upload_time']
+    )
 
 
 @task()
-def update_versions(pk):
+def update_package_versions(package):
     client = xmlrpclib.ServerProxy('http://pypi.python.org/pypi',
                                    use_datetime=True)
-    package = Package.objects.get(pk=pk)
-    for pypi_version in client.package_releases(package.name, True):
-        version, created = Version.objects.get_or_create(package=package,
-                                                         version=pypi_version)
-
-        update_releases.apply_async((version.pk,))
+    for version in client.package_releases(package):
+        update_version_details.apply_async((package, version,))
 
 
 @task()
 def update_packages():
     client = xmlrpclib.ServerProxy('http://pypi.python.org/pypi',
                                    use_datetime=True)
-    for package_name in client.list_packages():
-        package, created = Package.objects.get_or_create(name=package_name)
-        update_versions.apply_async((package.pk,))
+    for package in client.list_packages():
+        update_package_versions.apply_async((package,))

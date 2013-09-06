@@ -1,8 +1,7 @@
 Django PyPi
 ============
 
-PyPi structured in your database accessible through the Django ORM. Requires
-celery to pull down PyPi.
+Keep PyPi versions and release dates in your database for easy querying.
 
 Installation
 ------------
@@ -11,13 +10,13 @@ To get the latest stable release from PyPi
 
 .. code-block:: bash
 
-    $ pip install django-pypi
+    pip install django-pypi
 
 To get the latest commit from GitHub
 
 .. code-block:: bash
 
-    $ pip install -e git+git://github.com/Celc/django-pypi.git#egg=pypi
+    pip install -e git+git://github.com/Celc/django-pypi.git#egg=pypi
 
 Add ``pypi`` to your ``INSTALLED_APPS``
 
@@ -46,9 +45,9 @@ Then just start querying the ORM:
 
 .. code-block:: python
 
-    >>> package = Package.objects.get(name='Django')
-    >>> package.versions.values_list('version', flat=True)
-    [u'1.0.1', u'1.0.2', u'1.0.3', '...(remaining elements truncated)...']
+    >>> package = Package.objects.filter(name='Django').latest()
+    >>> package.version
+    '1.5.2'
 
 
 Contribute
