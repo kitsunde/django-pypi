@@ -1,6 +1,7 @@
 === In Progress ===
 - Warning: Completely backwards incompatible update.
 - Scaled down to provide name, version, date of package releases.
+- Added management command for fetching new packages.
 
 === 0.1 ===
 - Initial commit
