@@ -8,7 +8,7 @@ class Package(models.Model):
 
     class Meta:
         get_latest_by = 'released_at'
-        ordering = ('-version',)
+        ordering = ('-released_at',)
         unique_together = ('name', 'version')
 
     def __unicode__(self):
