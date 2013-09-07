@@ -52,3 +52,14 @@ def update_packages():
                                    use_datetime=True)
     for package in client.list_packages():
         update_package_versions.apply_async((package,))
+
+@task()
+def update_latest_releases():
+    client = xmlrpclib.ServerProxy('http://pypi.python.org/pypi',
+                                   use_datetime=True)
+    package = Package.objects.latest()
+    last_update = int(package.released_at.strftime("%s"))
+    new_releases = filter(lambda r: r[3] == 'new release',
+                          client.changelog(last_update))
+    for change in new_releases:
+        update_version_details.apply_async((change[0], change[1],))
