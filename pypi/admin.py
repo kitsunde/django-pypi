@@ -3,6 +3,7 @@ from pypi.models import Package
 
 
 class PackageAdmin(admin.ModelAdmin):
+    search_fields = ('name',)
     readonly_fields = Package._meta.get_all_field_names()
     has_add_permission = lambda s, r: False
     has_delete_permission = lambda s, r, o = None: False
